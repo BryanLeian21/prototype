@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Interactive AR Experience</title>
+    <style>
+        body { margin: 0; }
+        canvas { 
+            display: block; 
+            border: 3px solid #2196F3;
+        }
+        #arjs-video { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            border: 3px solid #2196F3;
+        }
+        #loading-popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            text-align: center;
+            display: block;
+        }
+        .ui-controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            border-radius: 10px;
+        }
+        button {
+            margin: 0 5px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            background: #2196F3;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        button:hover { background: #1976D2; }
+        button:active { background: #1565C0; }
+        @media (max-width: 480px) {
+            .ui-controls {
+                bottom: 10px;
+                width: 90%;
+                display: flex;
+                justify-content: space-around;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            button {
+                flex: 1;
+                min-width: 120px;
+                margin: 0;
+            }
+        }
+    </style>
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+</head>
+<body style="margin: 0; overflow: hidden;">
+    <div id="loading-popup">
+        <p>This process may take a few seconds... thank you</p>
+    </div>
+    <div class="ui-controls">
+        <button onclick="changeColor()">Change Color</button>
+        <button onclick="toggleRotation()">Toggle Rotation</button>
+        <button onclick="changeShape()">Change Shape</button>
+    </div>
+
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+        <a-assets>
+            <a-asset-item id="tree" src="https://cdn.glitch.com/c719c986-c0c5-48b8-967c-3cd8b8aa17f3%2Ftree.gltf?1490995498429"></a-asset-item>
+        </a-assets>
+
+        <a-marker preset="hiro">
+            <a-entity id="model-container">
+                <a-box id="interactive-box"
+                       position="0 0.5 0"
+                       material="color: #FF0000"
+                       animation="property: rotation; to: 0 360 0; loop: true; dur: 5000; enabled: false">
+                </a-box>
+            </a-entity>
+        </a-marker>
+        <a-entity camera></a-entity>
+    </a-scene>
+
+    <script>
+        // Prevent default touch behaviors
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        document.addEventListener('touchstart', function(e) {
+            if (e.target.tagName !== 'BUTTON') {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        // Handle orientation changes
+        window.addEventListener('orientationchange', function() {
+            setTimeout(function() {
+                window.scrollTo(0, 0);
+            }, 200);
+        });
+
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loading-popup').style.display = 'none';
+            }, 3000);
+        });
+
+        const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF'];
+        let currentColorIndex = 0;
+        let shapes = ['box', 'sphere', 'cylinder', 'cone'];
+        let currentShapeIndex = 0;
+
+        function changeColor() {
+            currentColorIndex = (currentColorIndex + 1) % colors.length;
+            const model = document.querySelector('#interactive-box');
+            model.setAttribute('material', 'color', colors[currentColorIndex]);
+        }
+
+        function toggleRotation() {
+            const model = document.querySelector('#interactive-box');
+            const animation = model.getAttribute('animation');
+            model.setAttribute('animation', 'enabled', !animation.enabled);
+        }
+
+        function changeShape() {
+            const container = document.querySelector('#model-container');
+            const oldModel = document.querySelector('#interactive-box');
+            const currentColor = oldModel.getAttribute('material').color;
+            const animation = oldModel.getAttribute('animation');
+
+            currentShapeIndex = (currentShapeIndex + 1) % shapes.length;
+            const newShape = document.createElement(`a-${shapes[currentShapeIndex]}`);
+            
+            newShape.id = 'interactive-box';
+            newShape.setAttribute('position', '0 0.5 0');
+            newShape.setAttribute('material', 'color', currentColor);
+            newShape.setAttribute('animation', animation);
+
+            container.removeChild(oldModel);
+            container.appendChild(newShape);
+        }
+    </script>
+</body>
+</html>
